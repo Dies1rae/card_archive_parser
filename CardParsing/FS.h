@@ -12,13 +12,14 @@ namespace fs = std::filesystem;
 class FS {
 private:
 	std::string path_in; //path to look for
-	std::string base_file;//path to output
+	std::string path_out; // path to output 
+	std::string base_file;//path to DB
 	std::string mask; //what files look
 	std::vector<file> files;
 	logg* main_log;
 public:
 	//build
-	FS(std::string P_in, std::string B_out, std::string M) :path_in(P_in), base_file(B_out), mask(M), files(), main_log() {}
+	FS(std::string P_in,std::string P_out, std::string B_out, std::string M) :path_in(P_in), path_out(P_out), base_file(B_out), mask(M), files(), main_log() {}
 	void init(logg* L);
 	void run();
 	//server methods

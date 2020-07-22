@@ -7,6 +7,7 @@
 #include <Windows.h>
 #include <fstream>
 
+
 namespace fs = std::filesystem;
 
 void FS::set_state(int PTR, bool S) {
@@ -68,21 +69,77 @@ void FS::run() {
 	for (auto ptr : this->files) {
 		std::cout << ptr.get_name() << ":" << ptr.get_state() << std::endl;
 	}
-	add_to_base(&this->files[0]);
+	while (1) {
+		collect_files();
+		if (this->files.size() > 0) {
+			std::cout << "Collected from *in*: " << std::endl;
+			for (auto ptr : this->files) { std::cout << ptr.get_name() << ':' << ptr.get_state() << std::endl; }
+
+			add_to_base(&this->files[0]);
+			//Sleep(4000);
+		}
+		else {
+			std::cout << "**ALL DONE**" << std::endl;
+			std::cout << "**WAITING**" << std::endl;
+			//Sleep(3000);
+		}
+		system("CLS");
+	}
+	
 	
 	
 }
 
 void FS::add_to_base(file* N) {
+	//init
 	this->main_log->add_log_string("ADDING START TO::" + N->get_name());
 	std::cout << " **WORKING WITH ** " << N->get_name() << std::endl;
-	std::ifstream docx(N->get_name(), std::ios::binary|std::ios::in);
-	std::string tmp;
+	std::ifstream textin(N->get_name(), std::ios::binary|std::ios::in);
+	std::string head;
+	std::string bodybuf;
+	std::vector<std::string> body;
+	std::string filenameout = this->path_out + '\\';
+	//parsing
+	//gethead
+	std::getline(textin, head);
+	textin.close();
+	//getbody
 
-	while (getline(docx,tmp)) {
-		std::cout << tmp << std::endl;
+
+	textin.open(N->get_name());
+	std::string tmpbuf;
+	while (std::getline(textin, tmpbuf)) {
+		body.push_back(tmpbuf);
 	}
-	docx.close();
+	textin.close();
+	for (int ptr = 1; ptr < body.size(); ptr++) {
+		bodybuf += body[ptr] + ':';
+	}
+	replace(bodybuf.begin(), bodybuf.end(), ',', '.');
+	//parse number from head
+	for (int ptr = 0; ptr < head.size();ptr++) {
+		if (head[ptr-1] == '.' && head[ptr] == 32 && head[ptr+1] == 32 && ptr + 1 != head.size()) {
+			head = head.substr(0, ptr);
+		}
+	}
+	//add head,body to csv
+	std::ofstream csvbase(this->base_file, std::ios_base::app | std::ios_base::out);
+	csvbase << head + ','+ bodybuf + '\n';
+	csvbase.close();
+	//copy
+	filenameout += head;
+	filenameout += ".txt";
+	std::ifstream src(N->get_name(), std::ios::binary);
+	std::ofstream dest(filenameout, std::ios::binary);
+	dest << src.rdbuf();
+	src.close();
+	dest.close();
+	//delet and clean
+	N->set_state(false);
+	delete_file();
+	this->main_log->add_log_string("RECOGNIZING AND ADDING DONE::" + N->get_name());
+	std::cout << "**write logs**" << std::endl;
+	this->main_log->write_to_file();
 }
 
 
