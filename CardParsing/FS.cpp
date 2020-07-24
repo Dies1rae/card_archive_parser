@@ -16,12 +16,31 @@ void FS::set_state(int PTR, bool S) {
 bool FS::get_state(int PTR) {
 	return this->files[PTR].get_state();
 }
-
 std::string FS::get_name(int PTR) {
 	return this->files[PTR].get_name();
 }
 
+std::string FS::get_name_img(int PTR) {
+	return this->files_img[PTR].get_name();
+}
+
+int FS::get_queals_jpg_txt(file* f) {
+	for (auto ptr : this->files) {
+		if (f->get_name() == ptr.get_name()) {
+			std::string tmpNAME = f->get_name().substr(0, f->get_name().size() - 4);
+			tmpNAME += ".jpg";
+			for (int ptr_jpg = 0; ptr_jpg < this->files_img.size(); ptr_jpg ++) {
+				if (this->files_img[ptr_jpg].get_name() == tmpNAME) {
+					return ptr_jpg;
+				}
+			}
+		}
+	}
+	return 9999999;
+}
+
 void FS::delete_file() {
+	//txt
 	std::vector<file>::iterator ptrIT;
 	for (ptrIT = this->files.begin(); ptrIT != this->files.end();) {
 		if (ptrIT->get_state() == 0) {
@@ -34,22 +53,55 @@ void FS::delete_file() {
 			++ptrIT;
 		}
 	}
+	//jpg
+	for (ptrIT = this->files_img.begin(); ptrIT != this->files_img.end();) {
+		if (ptrIT->get_state() == 0) {
+			for (auto& F : fs::recursive_directory_iterator(this->path_in)) {
+				fs::remove(ptrIT->get_name());
+			}
+			ptrIT = this->files_img.erase(ptrIT);
+		}
+		else {
+			++ptrIT;
+		}
+	}
 }
 
 void FS::collect_files() {
+	//txt
 	for (auto& F : fs::recursive_directory_iterator(this->path_in)) {
 		std::string tmpF = F.path().string();
-		if (tmpF.find(this->mask) != std::string::npos) {
+		if (tmpF.find(this->mask) != std::string::npos && F.file_size() > 0) {
 			file tmpFile(tmpF, 1);
-			if (find(tmpFile)) {
+			if (find_txt(tmpFile)) {
 				this->files.push_back(tmpFile);
+			}
+		}
+	}
+	//jpg
+	for (auto& F : fs::recursive_directory_iterator(this->path_in)) {
+		std::string tmpF = F.path().string();
+		if (tmpF.find(this->mask_img) != std::string::npos && F.file_size() > 0) {
+			file tmpFile(tmpF, 1);
+			if (find_img(tmpFile)) {
+				this->files_img.push_back(tmpFile);
 			}
 		}
 	}
 }
 
-bool FS::find(file N) {
+bool FS::find_txt(file N) {
+	//txt
 	for (auto ptrF : this->files) {
+		if (ptrF.get_name() == N.get_name() && ptrF.get_state() == N.get_state()) {
+			return false;
+		}
+	}
+	return true;
+}
+bool FS::find_img(file N) {
+	//txt
+	for (auto ptrF : this->files_img) {
 		if (ptrF.get_name() == N.get_name() && ptrF.get_state() == N.get_state()) {
 			return false;
 		}
@@ -85,73 +137,113 @@ void FS::run() {
 		}
 		system("CLS");
 	}
-	
-	
-	
 }
 
 void FS::add_to_base(file* N) {
 	//init
-	this->main_log->add_log_string("ADDING START TO::" + N->get_name());
-	std::cout << " **WORKING WITH ** " << N->get_name() << std::endl;
-	std::ifstream textin(N->get_name(), std::ios::binary|std::ios::in);
-	std::string head;
-	std::string bodybuf;
-	std::vector<std::string> body;
-	std::string filenameout = this->path_out + '\\';
-	//parsing
-	//gethead
-	std::getline(textin, head);
-	textin.close();
-	//getbody
-	textin.open(N->get_name());
-	std::string tmpbuf;
-	while (std::getline(textin, tmpbuf)) {
-		body.push_back(tmpbuf);
-	}
-	textin.close();
-	for (int ptr = 1; ptr < body.size(); ptr++) {
-		bodybuf += body[ptr] + ':';
-	}
-	//clean body
-	replace(bodybuf.begin(), bodybuf.end(), ',', '.');
-	replace(bodybuf.begin(), bodybuf.end(), '\n', ':');
-	//parse number from head
-	if (head.size() > 20) { //if head < 6 symbols that already a number
-		for (int ptr = 0; ptr < head.size();ptr++) {
-			//its clean head from restricted
-			if (head[ptr] == '\\' || head[ptr] == '/' || head[ptr] == '*' || head[ptr] == ':' || head[ptr] == '?' || head[ptr] == '"' || head[ptr] == '<' || head[ptr] == '>' || head[ptr] == '|' || head[ptr] == '+') {
-				head[ptr] = '_';
-			}
-			if ((head[ptr - 1] == '.' || head[ptr - 1] == '_') && head[ptr] == 32 && head[ptr + 1] == 32 && ptr + 1 != head.size()) {
-				head = head.substr(0, ptr);
-			}
+	//check img in files_img
+	if (get_queals_jpg_txt(N) != 9999999 && get_queals_jpg_txt(N) > -1) {
+		int img_pos = get_queals_jpg_txt(N);
+		this->main_log->add_log_string("ADDING START TO::" + N->get_name());
+		std::cout << " **WORKING WITH ** " << N->get_name() << std::endl;
+		std::ifstream textin(N->get_name(), std::ios::binary | std::ios::in);
+		int checklines = 0;
+		char chkchar;
+		std::string head;
+		std::string bodybuf;
+		std::vector<std::string> body;
+		std::string filenameout = this->path_out + '\\';
+		std::string filenameout_img = this->path_out + '\\';
+		//check number of lines in file
+		while (textin >> chkchar) {
+			checklines++;
 		}
+		textin.close();
+		if (checklines > 20) {
+			//parsing
+			//gethead
+			textin.open(N->get_name());
+			while (head.size() < 2) {
+				std::getline(textin, head);
+			}
+			textin.close();
+			//clean head
+			replace(head.begin(), head.end(), '\n', '_');
+			replace(head.begin(), head.end(), '^', '_');
+			replace(head.begin(), head.end(), ',', '_');
+			//getbody
+			textin.open(N->get_name());
+			std::string tmpbuf;
+			while (std::getline(textin, tmpbuf)) {
+				body.push_back(tmpbuf);
+			}
+			textin.close();
+			//clean body
+			replace(bodybuf.begin(), bodybuf.end(), '^', ':');
+			replace(bodybuf.begin(), bodybuf.end(), ',', ':');
+			replace(bodybuf.begin(), bodybuf.end(), '\n', ':');
+			for (int ptr = 1; ptr < body.size(); ptr++) {
+				bodybuf += body[ptr] + ':';
+			}
+			//parse number from head
+			if (head.size() > 20) { //if head < 6 symbols that already a number
+				for (int ptr = 0; ptr < head.size();ptr++) {
+					//its clean head from restricted
+					if (head[ptr] == '\\' || head[ptr] == '/' || head[ptr] == '*' || head[ptr] == ':' || head[ptr] == '?' || head[ptr] == '"' || head[ptr] == '<' || head[ptr] == '>' || head[ptr] == '|' || head[ptr] == '+') {
+						head[ptr] = '_';
+					}
+					if ((head[ptr - 1] == '.' || head[ptr - 1] == '_') && head[ptr] == 32 && head[ptr + 1] == 32 && ptr + 1 != head.size()) {
+						head = head.substr(0, ptr);
+					}
+				}
+			}
+			else {
+				head.pop_back();
+			}
+			replace(head.begin(), head.end(), '\n', '_');
+			replace(head.begin(), head.end(), '^', '_');
+			replace(head.begin(), head.end(), ',', '_');
+			replace(bodybuf.begin(), bodybuf.end(), '^', ':');
+			replace(bodybuf.begin(), bodybuf.end(), ',', ':');
+			replace(bodybuf.begin(), bodybuf.end(), '\n', ':');
+			//add head,body to csv
+			std::ofstream csvbase(this->base_file, std::ios_base::app | std::ios_base::out);
+			csvbase << head + ',' + bodybuf + '\n';
+			csvbase.close();
+			//copy
+			filenameout += head;
+			filenameout += ".txt";
+			filenameout_img += head;
+			filenameout_img += ".jpg";
+			std::ifstream src_txt(N->get_name(), std::ios::binary);
+			std::ofstream dest_txt(filenameout, std::ios::binary);
+			dest_txt << src_txt.rdbuf();
+			src_txt.close();
+			dest_txt.close();
+			std::ifstream src_img(this->files_img[img_pos].get_name(), std::ios::binary);
+			std::ofstream dest_img(filenameout_img, std::ios::binary);
+			dest_img << src_img.rdbuf();
+			src_img.close();
+			dest_img.close();
+
+		}
+		//delet and clean
+		head.clear();
+		bodybuf.clear();
+		body.clear();
+		this->files_img[img_pos].set_state(false);
+		N->set_state(false);
+		delete_file();
+		this->main_log->add_log_string("RECOGNIZING AND ADDING DONE::" + N->get_name());
+		std::cout << "**write logs**" << std::endl;
+		this->main_log->write_to_file();
 	}
 	else {
-		head.pop_back();
+		N->set_state(false);
+		delete_file();
+		std::cout << "**write logs**" << std::endl;
+		this->main_log->write_to_file();
 	}
-	//add head,body to csv
-	std::ofstream csvbase(this->base_file, std::ios_base::app | std::ios_base::out);
-	csvbase << head + ','+ bodybuf + '\n';
-	csvbase.close();
-	//copy
-	filenameout += head;
-	filenameout += ".txt";
-	std::ifstream src(N->get_name(), std::ios::binary);
-	std::ofstream dest(filenameout, std::ios::binary);
-	dest << src.rdbuf();
-	src.close();
-	dest.close();
-	//delet and clean
-	head.clear();
-	bodybuf.clear();
-	body.clear();
-	N->set_state(false);
-	delete_file();
-	this->main_log->add_log_string("RECOGNIZING AND ADDING DONE::" + N->get_name());
-	std::cout << "**write logs**" << std::endl;
-	this->main_log->write_to_file();
 }
 
 

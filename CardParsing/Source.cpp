@@ -15,8 +15,9 @@ int main(int argc, char* argv[]) {
 		std::string dir_out = ".\\out";
 		std::string base_file_out = ".\\out\\out.csv";
 		std::string mask = "txt";
+		std::string maskIM = "jpg";
 		logg* Nlog = new logg("Begin");
-		FS main_serv(dir_in, dir_out, base_file_out, mask);
+		FS main_serv(dir_in, dir_out, base_file_out, mask, maskIM);
 		main_serv.init(Nlog);
 		
 		main_serv.run();
@@ -34,8 +35,9 @@ int main(int argc, char* argv[]) {
 		std::string dir_out = ".\\out";
 		std::string base_file_out = ".\\out\\out.csv";
 		std::string mask = "txt";
+		std::string maskIM = "jpg";
 		logg* Nlog = new logg("Begin");
-		FS main_serv(dir_in, dir_out, base_file_out, mask);
+		FS main_serv(dir_in, dir_out, base_file_out, mask, maskIM);
 		main_serv.init(Nlog);
 		main_serv.run();
 	}
@@ -45,8 +47,9 @@ int main(int argc, char* argv[]) {
 			std::string dir_out = ".\\out";
 			std::string base_file_out = ".\\out\\out.csv";
 			std::string mask = "txt";
+			std::string maskIM = "jpg";
 			logg* Nlog = new logg("Begin");
-			FS main_serv(dir_in, dir_out, base_file_out, mask);
+			FS main_serv(dir_in, dir_out, base_file_out, mask, maskIM);
 			main_serv.init(Nlog);
 			main_serv.run();
 		}
@@ -55,8 +58,9 @@ int main(int argc, char* argv[]) {
 			std::string dir_out = argv[3];
 			std::string base_file_out = ".\\out\\out.csv";
 			std::string mask = "txt";
+			std::string maskIM = "jpg";
 			logg* Nlog = new logg("Begin");
-			FS main_serv(dir_in, dir_out, base_file_out, mask);
+			FS main_serv(dir_in, dir_out, base_file_out, mask, maskIM);
 			main_serv.init(Nlog);
 			main_serv.run();
 		}
@@ -65,8 +69,9 @@ int main(int argc, char* argv[]) {
 			std::string dir_out = argv[3];
 			std::string base_file_out = argv[4];
 			std::string mask = "txt";
+			std::string maskIM = "jpg";
 			logg* Nlog = new logg("Begin");
-			FS main_serv(dir_in, dir_out, base_file_out, mask);
+			FS main_serv(dir_in, dir_out, base_file_out, mask, maskIM);
 			main_serv.init(Nlog);
 			main_serv.run();
 		}
@@ -75,8 +80,20 @@ int main(int argc, char* argv[]) {
 			std::string dir_out = argv[3];
 			std::string base_file_out = argv[4];
 			std::string mask = argv[5];
+			std::string maskIM = "jpg";
 			logg* Nlog = new logg("Begin");
-			FS main_serv(dir_in, dir_out, base_file_out, mask);
+			FS main_serv(dir_in, dir_out, base_file_out, mask, maskIM);
+			main_serv.init(Nlog);
+			main_serv.run();
+		}
+		if (argc == 6) {
+			std::string dir_in = argv[2];
+			std::string dir_out = argv[3];
+			std::string base_file_out = argv[4];
+			std::string mask = argv[5];
+			std::string maskIM = argv[6];
+			logg* Nlog = new logg("Begin");
+			FS main_serv(dir_in, dir_out, base_file_out, mask, maskIM);
 			main_serv.init(Nlog);
 			main_serv.run();
 		}
