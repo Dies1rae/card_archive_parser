@@ -5,6 +5,7 @@
 #include<windows.h>
 
 int main(int argc, char* argv[]) {
+	
 	SetConsoleOutputCP(1251);
 	SetConsoleCP(1251);
 	if (argc == 1) {

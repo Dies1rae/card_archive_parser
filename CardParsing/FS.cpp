@@ -76,12 +76,12 @@ void FS::run() {
 			for (auto ptr : this->files) { std::cout << ptr.get_name() << ':' << ptr.get_state() << std::endl; }
 
 			add_to_base(&this->files[0]);
-			//Sleep(4000);
 		}
 		else {
+			Sleep(3000);
 			std::cout << "**ALL DONE**" << std::endl;
 			std::cout << "**WAITING**" << std::endl;
-			//Sleep(3000);
+			Sleep(2000);
 		}
 		system("CLS");
 	}
@@ -104,8 +104,6 @@ void FS::add_to_base(file* N) {
 	std::getline(textin, head);
 	textin.close();
 	//getbody
-
-
 	textin.open(N->get_name());
 	std::string tmpbuf;
 	while (std::getline(textin, tmpbuf)) {
@@ -115,12 +113,23 @@ void FS::add_to_base(file* N) {
 	for (int ptr = 1; ptr < body.size(); ptr++) {
 		bodybuf += body[ptr] + ':';
 	}
+	//clean body
 	replace(bodybuf.begin(), bodybuf.end(), ',', '.');
+	replace(bodybuf.begin(), bodybuf.end(), '\n', ':');
 	//parse number from head
-	for (int ptr = 0; ptr < head.size();ptr++) {
-		if (head[ptr-1] == '.' && head[ptr] == 32 && head[ptr+1] == 32 && ptr + 1 != head.size()) {
-			head = head.substr(0, ptr);
+	if (head.size() > 20) { //if head < 6 symbols that already a number
+		for (int ptr = 0; ptr < head.size();ptr++) {
+			//its clean head from restricted
+			if (head[ptr] == '\\' || head[ptr] == '/' || head[ptr] == '*' || head[ptr] == ':' || head[ptr] == '?' || head[ptr] == '"' || head[ptr] == '<' || head[ptr] == '>' || head[ptr] == '|' || head[ptr] == '+') {
+				head[ptr] = '_';
+			}
+			if ((head[ptr - 1] == '.' || head[ptr - 1] == '_') && head[ptr] == 32 && head[ptr + 1] == 32 && ptr + 1 != head.size()) {
+				head = head.substr(0, ptr);
+			}
 		}
+	}
+	else {
+		head.pop_back();
 	}
 	//add head,body to csv
 	std::ofstream csvbase(this->base_file, std::ios_base::app | std::ios_base::out);
@@ -135,6 +144,9 @@ void FS::add_to_base(file* N) {
 	src.close();
 	dest.close();
 	//delet and clean
+	head.clear();
+	bodybuf.clear();
+	body.clear();
 	N->set_state(false);
 	delete_file();
 	this->main_log->add_log_string("RECOGNIZING AND ADDING DONE::" + N->get_name());
