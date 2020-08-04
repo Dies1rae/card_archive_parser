@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
 			main_serv.init(Nlog);
 			main_serv.run();
 		}
-		if (argc == 5) {
+		if (argc == 6) {
 			std::string dir_in = argv[2];
 			std::string dir_out = argv[3];
 			std::string base_file_out = argv[4];
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
 			main_serv.init(Nlog);
 			main_serv.run();
 		}
-		if (argc == 6) {
+		if (argc == 7) {
 			std::string dir_in = argv[2];
 			std::string dir_out = argv[3];
 			std::string base_file_out = argv[4];

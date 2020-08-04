@@ -24,7 +24,7 @@ std::string FS::get_name_img(int PTR) {
 	return this->files_img[PTR].get_name();
 }
 
-int FS::get_queals_jpg_txt(file* f) {
+int FS::chk_equiv_file(file* f) {
 	for (auto ptr : this->files) {
 		if (f->get_name() == ptr.get_name()) {
 			std::string tmpNAME = f->get_name().substr(0, f->get_name().size() - 4);
@@ -41,6 +41,7 @@ int FS::get_queals_jpg_txt(file* f) {
 
 void FS::delete_file() {
 	//txt
+	this->main_log->add_log_string("::CLEAN START::");
 	std::vector<file>::iterator ptrIT;
 	for (ptrIT = this->files.begin(); ptrIT != this->files.end();) {
 		if (ptrIT->get_state() == 0) {
@@ -65,16 +66,21 @@ void FS::delete_file() {
 			++ptrIT;
 		}
 	}
+	this->main_log->add_log_string("::CLEAN DONE::");
+	this->main_log->write_to_file();
 }
 
 void FS::collect_files() {
 	//txt
+	this->main_log->add_log_string("::COLLECT START::");
 	for (auto& F : fs::recursive_directory_iterator(this->path_in)) {
 		std::string tmpF = F.path().string();
 		if (tmpF.find(this->mask) != std::string::npos && F.file_size() > 0) {
 			file tmpFile(tmpF, 1);
 			if (find_txt(tmpFile)) {
 				this->files.push_back(tmpFile);
+				this->main_log->add_log_string("COLLECT FILE::"+ tmpFile.get_name());
+				this->main_log->write_to_file();
 			}
 		}
 	}
@@ -88,6 +94,8 @@ void FS::collect_files() {
 			}
 		}
 	}
+	this->main_log->add_log_string("::COLLECT DONE::");
+	this->main_log->write_to_file();
 }
 
 bool FS::find_txt(file N) {
@@ -111,12 +119,13 @@ bool FS::find_img(file N) {
 
 void FS::init(logg* L) {
 	this->main_log = L;
-	this->main_log->add_log_string("INIT DONE");
+	this->main_log->add_log_string("::INIT DONE::");
+	this->main_log->write_to_file();
 	this->collect_files();
 }
 
 void FS::run() {
-	this->main_log->add_log_string("SERVER START");
+	this->main_log->add_log_string("::SERVER START::");
 	this->main_log->write_to_file();
 	for (auto ptr : this->files) {
 		std::cout << ptr.get_name() << ":" << ptr.get_state() << std::endl;
@@ -124,12 +133,15 @@ void FS::run() {
 	while (1) {
 		collect_files();
 		if (this->files.size() > 0) {
+			this->main_log->add_log_string("::WORKING::");
+			this->main_log->write_to_file();
 			std::cout << "Collected from *in*: " << std::endl;
 			for (auto ptr : this->files) { std::cout << ptr.get_name() << ':' << ptr.get_state() << std::endl; }
-
-			add_to_base(&this->files[0]);
+			main_parser(&this->files[0]);
 		}
 		else {
+			this->main_log->add_log_string("::WAITING::");
+			this->main_log->write_to_file();
 			Sleep(3000);
 			std::cout << "**ALL DONE**" << std::endl;
 			std::cout << "**WAITING**" << std::endl;
@@ -139,13 +151,13 @@ void FS::run() {
 	}
 }
 
-void FS::add_to_base(file* N) {
+void FS::main_parser(file* N) {
 	//init
 	//check img in files_img
-	if (get_queals_jpg_txt(N) != 9999999 && get_queals_jpg_txt(N) > -1) {
-		int img_pos = get_queals_jpg_txt(N);
-		this->main_log->add_log_string("ADDING START TO::" + N->get_name());
-		std::cout << " **WORKING WITH ** " << N->get_name() << std::endl;
+	if (chk_equiv_file(N) != 9999999 && chk_equiv_file(N) > -1) {
+		int img_pos = chk_equiv_file(N);
+		this->main_log->add_log_string("::ADDING FILES TO BASE LIST::" + N->get_name());
+		std::cout << "::WORKING WITH::" << N->get_name() << std::endl;
 		std::ifstream textin(N->get_name(), std::ios::binary | std::ios::in);
 		int checklines = 0;
 		char chkchar;
@@ -163,7 +175,7 @@ void FS::add_to_base(file* N) {
 			//parsing
 			//gethead
 			textin.open(N->get_name());
-			while (head.size() < 2) {
+			while (head.size() < 4) {
 				std::getline(textin, head);
 			}
 			textin.close();
@@ -200,12 +212,6 @@ void FS::add_to_base(file* N) {
 			else {
 				head.pop_back();
 			}
-			replace(head.begin(), head.end(), '\n', '_');
-			replace(head.begin(), head.end(), '^', '_');
-			replace(head.begin(), head.end(), ',', '_');
-			replace(bodybuf.begin(), bodybuf.end(), '^', ':');
-			replace(bodybuf.begin(), bodybuf.end(), ',', ':');
-			replace(bodybuf.begin(), bodybuf.end(), '\n', ':');
 			//add head,body to csv
 			std::ofstream csvbase(this->base_file, std::ios_base::app | std::ios_base::out);
 			csvbase << head + ',' + bodybuf + '\n';
@@ -234,7 +240,7 @@ void FS::add_to_base(file* N) {
 		this->files_img[img_pos].set_state(false);
 		N->set_state(false);
 		delete_file();
-		this->main_log->add_log_string("RECOGNIZING AND ADDING DONE::" + N->get_name());
+		this->main_log->add_log_string("::RECOGNIZING AND ADDING DONE::" + N->get_name());
 		std::cout << "**write logs**" << std::endl;
 		this->main_log->write_to_file();
 	}
