@@ -72,7 +72,6 @@ void FS::delete_file() {
 
 void FS::collect_files() {
 	//txt
-	this->main_log->add_log_string("::COLLECT START::");
 	for (auto& F : fs::recursive_directory_iterator(this->path_in)) {
 		std::string tmpF = F.path().string();
 		if (tmpF.find(this->mask) != std::string::npos && F.file_size() > 0) {
@@ -94,8 +93,6 @@ void FS::collect_files() {
 			}
 		}
 	}
-	this->main_log->add_log_string("::COLLECT DONE::");
-	this->main_log->write_to_file();
 }
 
 bool FS::find_txt(file N) {
@@ -140,8 +137,6 @@ void FS::run() {
 			main_parser(&this->files[0]);
 		}
 		else {
-			this->main_log->add_log_string("::WAITING::");
-			this->main_log->write_to_file();
 			Sleep(3000);
 			std::cout << "**ALL DONE**" << std::endl;
 			std::cout << "**WAITING**" << std::endl;
