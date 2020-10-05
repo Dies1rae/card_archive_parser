@@ -5,7 +5,7 @@
 #include<windows.h>
 
 int main(int argc, char* argv[]) {
-	
+	setlocale(LC_ALL, "ru_RU.UTF-8");
 	SetConsoleOutputCP(1251);
 	SetConsoleCP(1251);
 	if (argc == 1) {

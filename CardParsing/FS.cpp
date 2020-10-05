@@ -29,7 +29,7 @@ int FS::chk_equiv_file(file* f) {
 		if (f->get_name() == ptr.get_name()) {
 			std::string tmpNAME = f->get_name().substr(0, f->get_name().size() - 4);
 			tmpNAME += ".jpg";
-			for (int ptr_jpg = 0; ptr_jpg < this->files_img.size(); ptr_jpg ++) {
+			for (int ptr_jpg = 0; ptr_jpg < this->files_img.size(); ptr_jpg++) {
 				if (this->files_img[ptr_jpg].get_name() == tmpNAME) {
 					return ptr_jpg;
 				}
@@ -49,8 +49,7 @@ void FS::delete_file() {
 				fs::remove(ptrIT->get_name());
 			}
 			ptrIT = this->files.erase(ptrIT);
-		}
-		else {
+		} else {
 			++ptrIT;
 		}
 	}
@@ -61,8 +60,7 @@ void FS::delete_file() {
 				fs::remove(ptrIT->get_name());
 			}
 			ptrIT = this->files_img.erase(ptrIT);
-		}
-		else {
+		} else {
 			++ptrIT;
 		}
 	}
@@ -78,7 +76,7 @@ void FS::collect_files() {
 			file tmpFile(tmpF, 1);
 			if (find_txt(tmpFile)) {
 				this->files.push_back(tmpFile);
-				this->main_log->add_log_string("COLLECT FILE::"+ tmpFile.get_name());
+				this->main_log->add_log_string("COLLECT FILE::" + tmpFile.get_name());
 				this->main_log->write_to_file();
 			}
 		}
@@ -135,8 +133,7 @@ void FS::run() {
 			std::cout << "Collected from *in*: " << std::endl;
 			for (auto ptr : this->files) { std::cout << ptr.get_name() << ':' << ptr.get_state() << std::endl; }
 			main_parser(&this->files[0]);
-		}
-		else {
+		} else {
 			Sleep(3000);
 			std::cout << "**ALL DONE**" << std::endl;
 			std::cout << "**WAITING**" << std::endl;
@@ -153,84 +150,70 @@ void FS::main_parser(file* N) {
 		int img_pos = chk_equiv_file(N);
 		this->main_log->add_log_string("::ADDING FILES TO BASE LIST::" + N->get_name());
 		std::cout << "::WORKING WITH::" << N->get_name() << std::endl;
-		std::ifstream textin(N->get_name(), std::ios::binary | std::ios::in);
-		int checklines = 0;
-		char chkchar;
-		std::string head;
+
+		int lines_in_file_ptr = 0;
+
+		std::string tmpbuf;
+		std::string headbuf;
+		std::vector<std::string> head;
 		std::string bodybuf;
 		std::vector<std::string> body;
 		std::string filenameout = this->path_out + '\\';
 		std::string filenameout_img = this->path_out + '\\';
 		//check number of lines in file
-		while (textin >> chkchar) {
-			checklines++;
-		}
-		textin.close();
-		if (checklines > 20) {
-			//parsing
-			//gethead
-			textin.open(N->get_name());
-			while (head.size() < 4) {
-				std::getline(textin, head);
-			}
-			textin.close();
-			//clean head
-			replace(head.begin(), head.end(), '\n', '_');
-			replace(head.begin(), head.end(), '^', '_');
-			replace(head.begin(), head.end(), ',', '_');
-			//getbody
-			textin.open(N->get_name());
-			std::string tmpbuf;
-			while (std::getline(textin, tmpbuf)) {
+		std::ifstream textin;
+		textin.open(N->get_name());
+		while (std::getline(textin, tmpbuf)) {
+			if(lines_in_file_ptr < 2){
+				head.push_back(tmpbuf);
+			} else {
 				body.push_back(tmpbuf);
 			}
-			textin.close();
-			//clean body
-			replace(bodybuf.begin(), bodybuf.end(), '^', ':');
-			replace(bodybuf.begin(), bodybuf.end(), ',', ':');
-			replace(bodybuf.begin(), bodybuf.end(), '\n', ':');
-			for (int ptr = 1; ptr < body.size(); ptr++) {
-				bodybuf += body[ptr] + ':';
-			}
-			//parse number from head
-			if (head.size() > 20) { //if head < 6 symbols that already a number
-				for (int ptr = 0; ptr < head.size();ptr++) {
-					//its clean head from restricted
-					if (head[ptr] == '\\' || head[ptr] == '/' || head[ptr] == '*' || head[ptr] == ':' || head[ptr] == '?' || head[ptr] == '"' || head[ptr] == '<' || head[ptr] == '>' || head[ptr] == '|' || head[ptr] == '+') {
-						head[ptr] = '_';
-					}
-					if ((head[ptr - 1] == '.' || head[ptr - 1] == '_') && head[ptr] == 32 && head[ptr + 1] == 32 && ptr + 1 != head.size()) {
-						head = head.substr(0, ptr);
-					}
-				}
-			}
-			else {
-				head.pop_back();
-			}
-			//add head,body to csv
-			std::ofstream csvbase(this->base_file, std::ios_base::app | std::ios_base::out);
-			csvbase << head + ',' + bodybuf + '\n';
-			csvbase.close();
-			//copy
-			filenameout += head;
-			filenameout += ".txt";
-			filenameout_img += head;
-			filenameout_img += ".jpg";
-			std::ifstream src_txt(N->get_name(), std::ios::binary);
-			std::ofstream dest_txt(filenameout, std::ios::binary);
-			dest_txt << src_txt.rdbuf();
-			src_txt.close();
-			dest_txt.close();
-			std::ifstream src_img(this->files_img[img_pos].get_name(), std::ios::binary);
-			std::ofstream dest_img(filenameout_img, std::ios::binary);
-			dest_img << src_img.rdbuf();
-			src_img.close();
-			dest_img.close();
-
+			lines_in_file_ptr++;
 		}
+		textin.close();
+		for (auto& ptr : head) {
+			headbuf += ptr;
+			headbuf += '_';
+		}
+		
+		for (auto& ptr : body) {
+			bodybuf += ptr;
+			bodybuf += ':';
+		}
+		replace(headbuf.begin(), headbuf.end(), '\n', '_');
+		replace(headbuf.begin(), headbuf.end(), '^', '_');
+		replace(headbuf.begin(), headbuf.end(), ',', '_');
+		replace(headbuf.begin(), headbuf.end(), '.', '_');
+		replace(bodybuf.begin(), bodybuf.end(), '\n', ':');
+		replace(bodybuf.begin(), bodybuf.end(), '^', ':');
+		replace(bodybuf.begin(), bodybuf.end(), ',', ':');
+
+		//add head,body to csv
+		std::ofstream csvbase(this->base_file, std::ios_base::app | std::ios_base::out);
+		csvbase << headbuf + ';' + bodybuf + '\n';
+		csvbase.close();
+		//copy
+		filenameout += headbuf;
+		filenameout += ".txt";
+		filenameout_img += headbuf;
+		filenameout_img += ".jpg";
+		std::ifstream src_txt(N->get_name(), std::ios::binary);
+		std::ofstream dest_txt(filenameout, std::ios::binary);
+		dest_txt << src_txt.rdbuf();
+		src_txt.close();
+		dest_txt.close();
+		std::ifstream src_img(this->files_img[img_pos].get_name(), std::ios::binary);
+		std::ofstream dest_img(filenameout_img, std::ios::binary);
+		dest_img << src_img.rdbuf();
+		src_img.close();
+		dest_img.close();
+
+
 		//delet and clean
-		head.clear();
+		headbuf.clear();
 		bodybuf.clear();
+		head.clear();
 		body.clear();
 		this->files_img[img_pos].set_state(false);
 		N->set_state(false);
@@ -238,14 +221,10 @@ void FS::main_parser(file* N) {
 		this->main_log->add_log_string("::RECOGNIZING AND ADDING DONE::" + N->get_name());
 		std::cout << "**write logs**" << std::endl;
 		this->main_log->write_to_file();
-	}
-	else {
+	} else {
 		N->set_state(false);
 		delete_file();
 		std::cout << "**write logs**" << std::endl;
 		this->main_log->write_to_file();
 	}
 }
-
-
-
